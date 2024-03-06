@@ -75,6 +75,11 @@ docs/_build/
 .pybuilder/
 target/
 
+#Testing stuff
+gsuggest_enhanced.csv
+gsuggest.csv
+test.py
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
