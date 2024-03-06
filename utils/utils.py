@@ -1,6 +1,6 @@
 import nltk
-nltk.download('punkt')
-nltk.download('stopwords')
+nltk.download('punkt', quiet=True)
+nltk.download('stopwords', quiet=True)
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
@@ -14,8 +14,12 @@ def make_combinations(term_list, combo_length):
 
   return unique_string_suffixes
 
-def remove_stopwords(query, stopwords = stopwords.words('english')):
-  word_tokens = word_tokenize(query)
+def tokenize(word):
+  word_tokens = word_tokenize(word)
+
+  return word_tokens
+
+def stopwords_removal(word_tokens, stopwords = stopwords.words('english')):
   filtered_word = [w for w in word_tokens if not w.lower() in stopwords]
 
   return filtered_word
