@@ -2,7 +2,6 @@ import urllib
 import requests
 import json
 import pandas as pd
-import logging
 
 from utils.utils import *
 
