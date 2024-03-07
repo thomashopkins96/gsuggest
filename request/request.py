@@ -2,7 +2,9 @@ import urllib
 import requests
 import json
 import pandas as pd
+import logging
 
+from time import sleep
 from utils.utils import *
 
 class GSuggest:
@@ -24,40 +26,46 @@ class GSuggest:
             df_dict['suggestion_type'] = google_suggestions[4]['google:suggesttype']
             df = pd.DataFrame(df_dict)
 
+            
             return df
 
         else:
             print('Did not return any suggestions for "{}"'.format(query))
             return None
 
-    def get_enhanced_query_suggestions(self, query, filter_out_non_query_kws = True, n_combos = 2, remove_stopwords = False):
+    def get_enhanced_query_suggestions(self, query, filter_out_non_query_kws = True, remove_stopwords = False, n_combos = 2, iterations = 1, wait_time = 1):
         if self.get_query_suggestions(query) is not None:
-            seed_kws = self.get_query_suggestions(query)['suggested_queries'].tolist()
-            individual_terms = set()
-            if remove_stopwords == True:
-                for x in seed_kws:
-                    split_term_list = stopwords_removal(tokenize(x))
-            else:
-                for x in seed_kws:
-                    split_term_list = tokenize(x)
+            for x in range(iterations):
+                print("Starting iteration {} for query expansion".format(x))
+                seed_kws = self.get_query_suggestions(query)['suggested_queries'].tolist()
+                individual_terms = set()
+                if remove_stopwords == True:
+                    for x in seed_kws:
+                        split_term_list = stopwords_removal(tokenize(x))
+                else:
+                    for x in seed_kws:
+                        split_term_list = tokenize(x)
 
-                    for term in split_term_list:
-                        individual_terms.add(term)
-            
-            additional_suggested_queries = []
+                        for term in split_term_list:
+                            individual_terms.add(term)
+                
+                additional_suggested_queries = []
 
-            for x in individual_terms:
-                request_suggestions = self.get_query_suggestions('{} {}'.format(query, x))
-            if request_suggestions is not None:
-                additional_suggested_queries.append(request_suggestions)
+                for x in individual_terms:
+                    request_suggestions = self.get_query_suggestions('{} {}'.format(query, x))
+                if request_suggestions is not None:
+                    additional_suggested_queries.append(request_suggestions)
 
-            if n_combos > 1:
-                combos = make_combinations(individual_terms, n_combos)
-            for c in combos:
-                additional_suggested_queries.append(self.get_query_suggestions('{} {}'.format(query, c)))
+                if n_combos > 1:
+                    combos = make_combinations(individual_terms, n_combos)
+                for c in combos:
+                    additional_suggested_queries.append(self.get_query_suggestions('{} {}'.format(query, c)))
 
-            raw_res = pd.concat(additional_suggested_queries).reset_index(drop=True)
-            if filter_out_non_query_kws == True:
-                return raw_res[raw_res['suggested_queries'].str.contains(query)].reset_index(drop=True)
-            else:
-                return raw_res
+                raw_res = pd.concat(additional_suggested_queries).reset_index(drop=True)
+
+                if filter_out_non_query_kws == True:
+                    print("DataFrame using seed query {} containing {} rows was created successfully.".format(query, len(raw_res)))
+                    return raw_res[raw_res['suggested_queries'].str.contains(query)].reset_index(drop=True)
+                else:
+                    print("DataFrame using seed query {} containing {} rows was created successfully.".format(query, len(raw_res)))
+                    return raw_res
